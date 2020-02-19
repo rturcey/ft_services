@@ -70,7 +70,21 @@ docker build -t wordpress srcs/wordpress/
 
 kubectl apply -f ./srcs/
 
+# ******************************* import .sql ******************************** #
+
 MINIKUBE_IP=$(minikube ip)
 export MINIKUBE_IP
-echo $MINIKUBE_IP
+
+cp srcs/mysql/wordpressdb.sql srcs/mysql/wordpressdbis.sql
+sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/mysql/wordpressdbis.sql
+
+while [[ $(kubectl get pods -l app=mysql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do
+	sleep 5;
+done
+
+sleep 20
+
+kubectl exec -i $(kubectl get pods | grep mysql | cut -d" " -f1) -- mysql wordpressdb -u root < srcs/mysql/wordpressdbis.sql
+
+
 #kubectl delete -k ./

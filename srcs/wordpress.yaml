@@ -5,79 +5,43 @@ metadata:
   labels:
     app: wordpress
 spec:
+  type: NodePort
   ports:
-    - protocol: TCP
-      port: 80
-      nodePort: 5050
+  - port: 5050
+    nodePort: 5050
+    protocol: TCP
+    name: http
   selector:
     app: wordpress
-  type: NodePort
 ---
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: wp-pv-claim
-  labels:
-    app: wordpress
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 2Gi
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: wp-pv-volume
-  labels:
-    type: local
-spec:
-  storageClassName: manual
-  capacity:
-    storage: 500Mi
-  accessModes:
-    - ReadWriteOnce
-  hostPath:
-    path: "/data"
----
-apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: wordpress
   labels:
     app: wordpress
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: wordpress
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
         app: wordpress
     spec:
       containers:
-      - image: wordpress
-        imagePullPolicy: Never
-        name: wordpress
-        env:
-        - name: DB_HOST
-          value: mysql
-        - name: DB_USER
-          value: root
-        - name: DB_PASSWORD
-          value: password
-        - name: DB_NAME
-          value: wordpressdb
+      - name: wordpress
+        image: wordpress
         ports:
-        - containerPort: 80
-          name: wordpress
-        volumeMounts:
-        - name: wordpress-persistent-storage
-          mountPath: /var/www/html
-      volumes:
-      - name: wordpress-persistent-storage
-        persistentVolumeClaim:
-          claimName: wp-pv-claim
+        - containerPort: 5050
+        imagePullPolicy: Never
+        env:
+          - name: DB_NAME
+            value: wordpressdb
+          - name: DB_USER
+            value: root
+          - name: DB_PASSWORD
+            value: password
+          - name: DB_HOST
+            value: mysql

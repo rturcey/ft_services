@@ -1,23 +1,13 @@
-FROM alpine:3.7
+FROM alpine:latest
 
-LABEL MAINTAINER="Aurelien PERRIER <a.perrier89@gmail.com>"
+WORKDIR /app
+VOLUME /app
+COPY startup.sh /startup.sh
+# COPY wordpressdb.sql /wordpressdb.sql
 
-# Installing packages MariaDB
-RUN apk add --no-cache mysql
-RUN addgroup mysql mysql
-
-# Work path
-WORKDIR /scripts
-
-# Copy of the MySQL startup script
-COPY startup.sh startup.sh
-COPY wordpressdb.sql wordpressdb.sql
-
+RUN apk add --update mysql mysql-client && rm -f /var/cache/apk/*
 COPY my.cnf /etc/mysql/my.cnf
-
-# Creating the persistent volume
-VOLUME [ "/var/lib/mysql" ]
+COPY wordpressdb.sql .
 
 EXPOSE 3306
-
-ENTRYPOINT [ "./startup.sh" ]
+CMD ["/startup.sh"]
