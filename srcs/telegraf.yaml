@@ -39,7 +39,7 @@ data:
       collect_cpu_time = false
       report_active = false
     [[inputs.kubernetes]]
-      url = "https://192.168.99.103:10250"
+      url = "https://192.168.99.104:10250"
       insecure_skip_verify = true
 ---
 apiVersion: v1

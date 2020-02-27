@@ -97,7 +97,7 @@
               {
                 "key": "container_name",
                 "operator": "=",
-                "value": "DASHBOARD_NAME"
+                "value": "influxdb"
               }
             ]
           }
@@ -224,7 +224,7 @@
               {
                 "key": "container_name",
                 "operator": "=",
-                "value": "DASHBOARD_NAME"
+                "value": "influxdb"
               }
             ]
           }
@@ -361,7 +361,7 @@
               {
                 "key": "container_name",
                 "operator": "=",
-                "value": "DASHBOARD_NAME"
+                "value": "influxdb"
               }
             ]
           }
@@ -384,7 +384,7 @@
     },
     "timepicker": {},
     "timezone": "",
-    "title": "DASHBOARD_NAME",
+    "title": "influxdb",
     "version": 4
   }
 }

@@ -96,8 +96,8 @@ kubectl exec -i $(kubectl get pods | grep mysql | cut -d" " -f1) -- mysql wordpr
 
 # ***************************** import influxdb ****************************** #
 
-cp srcs/originals/setdb.sh srcs/setdb.sh
-sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/setdb.sh
+cp srcs/originals/setdbs.sh srcs/dashboards/setdbs.sh
+sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/dashboards/setdbs.sh
 
 while [ $(kubectl get pods -l app=grafana -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]; do
 	sleep 5;
@@ -105,7 +105,7 @@ done
 
 sleep 20
 
-sh srcs/setdb.sh
+sh srcs/dashboards/setdbs.sh
 
 
 

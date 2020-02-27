@@ -97,7 +97,7 @@
               {
                 "key": "container_name",
                 "operator": "=",
-                "value": "DASHBOARD_NAME"
+                "value": "wordpress"
               }
             ]
           }
@@ -224,7 +224,7 @@
               {
                 "key": "container_name",
                 "operator": "=",
-                "value": "DASHBOARD_NAME"
+                "value": "wordpress"
               }
             ]
           }
@@ -361,7 +361,7 @@
               {
                 "key": "container_name",
                 "operator": "=",
-                "value": "DASHBOARD_NAME"
+                "value": "wordpress"
               }
             ]
           }
@@ -384,7 +384,7 @@
     },
     "timepicker": {},
     "timezone": "",
-    "title": "DASHBOARD_NAME",
+    "title": "wordpress",
     "version": 4
   }
 }
