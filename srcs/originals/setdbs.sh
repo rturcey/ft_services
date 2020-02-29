@@ -18,7 +18,6 @@ curl -s -H "Content-Type: application/json" \
     }
 EOF
 
-pwd
 cp ./srcs/originals/dashboard.json ./srcs/dashboards/dashboard_telegraf.json
 sed -i '' "s/DASHBOARD_NAME/telegraf/g" ./srcs/dashboards/dashboard_telegraf.json
 curl -s -H "Content-Type: application/json" \

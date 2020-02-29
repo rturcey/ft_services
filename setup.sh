@@ -12,6 +12,12 @@
 
 #!/bin/sh
 
+green=$'\033[1;92m'
+red=$'\033[1;91m'
+cend=$'\033[0m'
+
+echo "${red}[!] PLEASE NOTICE THAT DOCKER SHOULD BE RUNNING NOW [!]${cend}"
+
 # ****************************** checking $USER ****************************** #
 
 if [ -z "$USER" ]; then
@@ -22,26 +28,25 @@ mkdir -p /goinfre/$USER
 
 # ****************************** checking brew ******************************* #
 
-which -s brew
+which -s brew 
 
 if [ $? != 0 ] ; then
+	echo "${green}Installing brew...${cend}"
 	rm -rf $HOME/.brew
 	git clone --depth=1 https://github.com/Homebrew/brew $HOME/.brew
 	echo 'export PATH=$HOME/.brew/bin:$PATH' >> $HOME/.zshrc
 	source $HOME/.zshrc
 fi
 
+echo "${green}Updating brew...${cend}"
 brew update
-
-# ******************************* init docker ******************************** #
-
-sh srcs/init_docker.sh
 
 # ***************************** checking minikube **************************** #
 
 which -s minikube
 
 if [ $? != 0 ] ; then
+	echo "${green}Installing minikube...${cend}"
 	brew install minikube
 fi
 
@@ -53,11 +58,13 @@ export MINIKUBE_HOME
 which -s kubectl
 
 if [ $? != 0 ] ; then
+	echo "${green}Installing kubectl...${cend}"
 	brew install kubectl
 fi
 
 # ************************* minikube start & addons ************************** #
 
+echo "${green}Starting minikube...${cend}"
 minikube config set vm-driver virtualbox
 minikube delete
 minikube start --extra-config=apiserver.service-node-port-range=1-30000 --extra-config=kubelet.authorization-mode=AlwaysAllow
@@ -72,9 +79,19 @@ export MINIKUBE_IP
 
 # ****************************** build & apply ******************************* #
 
+echo "${green}Building...${cend}"
 docker build -t nginx srcs/nginx/
+
+cp srcs/originals/wordpressdb.sql srcs/mysql/wordpressdb.sql
+sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/mysql/wordpressdb.sql
+
 docker build -t mysql srcs/mysql/
 docker build -t wordpress srcs/wordpress/
+
+cp srcs/originals/setssl.sh srcs/ftps/setssl.sh
+sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/ftps/setssl.sh
+
+docker build -t ftps srcs/ftps/
 
 cp srcs/originals/telegraf.yaml srcs/telegraf.yaml
 sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/telegraf.yaml
@@ -83,19 +100,18 @@ kubectl apply -f ./srcs/
 
 # ******************************* import .sql ******************************** #
 
-cp srcs/originals/wordpressdb.sql srcs/mysql/wordpressdb.sql
-sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/mysql/wordpressdb.sql
-
+echo "${green}Importing SQL db...${cend}"
 while [ $(kubectl get pods -l app=mysql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]; do
 	sleep 5;
 done
 
-sleep 20
+sleep 30
 
 kubectl exec -i $(kubectl get pods | grep mysql | cut -d" " -f1) -- mysql wordpressdb -u root < srcs/mysql/wordpressdb.sql
 
 # ***************************** import influxdb ****************************** #
 
+echo "${green}Importing dashboards...${cend}"
 cp srcs/originals/setdbs.sh srcs/dashboards/setdbs.sh
 sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/dashboards/setdbs.sh
 
@@ -106,6 +122,10 @@ done
 sleep 20
 
 sh srcs/dashboards/setdbs.sh
+
+# test ssh : ssh admin@$(minikube ip) -p 400
+# kill container : kubectl exec -it $(kubectl get pods | grep SERVICE_NAME | cut -d" " -f1) -- /bin/sh -c "kill 1"
+# clean : minikube delete && rm ./srcs/dashboards/* && rm ./srcs/mysql/wordpressdb.sql && rm ./srcs/telegraf.yaml && rm ./srcs/ftps/setssl.sh
 
 
 
