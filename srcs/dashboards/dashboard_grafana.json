@@ -98,7 +98,7 @@
               {
                 "key": "container_name",
                 "operator": "=",
-                "value": "DASHBOARD_NAME"
+                "value": "grafana"
               }
             ]
           }
@@ -231,7 +231,7 @@
               {
                 "key": "container_name",
                 "operator": "=",
-                "value": "DASHBOARD_NAME"
+                "value": "grafana"
               }
             ]
           }
@@ -303,7 +303,7 @@
       ]
     },
     "timezone": "",
-    "title": "DASHBOARD_NAME",
+    "title": "grafana",
     "version": 1
   }
 }

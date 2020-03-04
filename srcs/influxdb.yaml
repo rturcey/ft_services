@@ -18,7 +18,7 @@ kind: PersistentVolumeClaim
 metadata:
   name: influxdb-pvcl
   labels:
-    app: influxdb
+    app: influxdDB
 spec:
   accessModes:
   - ReadWriteOnce
@@ -44,18 +44,25 @@ spec:
     spec:
       containers:
       - name: influxdb
-        image: influxdb:alpine
+        image: influxdb
+        imagePullPolicy: Never
         volumeMounts:
-        - name: influxdb-persistent-storage
+        - name: influxdb-ps
           mountPath: /var/lib/influxdb
         env:
         - name: INFLUXDB_DB
           value: influxdb
+        - name: INFLUXDB_ADMIN_ENABLED
+          value: "true"
         - name: INFLUXDB_USER
           value: root
         - name: INFLUXDB_PASSWORD
           value: password
+        - name: INFLUXDB_ADMIN_USER
+          value: root
+        - name: INFLUXDB_ADMIN_PASSWORD
+          value: password
       volumes:
-      - name: influxdb-persistent-storage
+      - name: influxdb-ps
         persistentVolumeClaim:
           claimName: influxdb-pvcl

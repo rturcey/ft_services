@@ -21,7 +21,8 @@ echo "${red}[!] PLEASE NOTICE THAT DOCKER SHOULD BE RUNNING NOW [!]${cend}"
 # ****************************** checking $USER ****************************** #
 
 if [ -z "$USER" ]; then
-	export USER=$(whoami)
+	echo 'export $USER=$(whoami)' >> ~/.zshenv
+	source ~/.zshenv
 fi
 
 mkdir -p /goinfre/$USER
@@ -43,15 +44,19 @@ brew update
 
 # ***************************** checking minikube **************************** #
 
+if [ -d /goinfre/$USER/.minikube ]; then
+	rm -rf /goinfre/$USER/.minikube
+fi
+
+echo 'export MINIKUBE_HOME=/goinfre/$USER' >> ~/.zshenv
+source ~/.zshenv
+
 which -s minikube
 
 if [ $? != 0 ] ; then
 	echo "${green}Installing minikube...${cend}"
 	brew install minikube
 fi
-
-MINIKUBE_HOME=/goinfre/$USER
-export MINIKUBE_HOME
 
 # ***************************** checking kubectl ***************************** #
 
@@ -67,41 +72,46 @@ fi
 echo "${green}Starting minikube...${cend}"
 minikube config set vm-driver virtualbox
 minikube delete
-minikube start --extra-config=apiserver.service-node-port-range=1-30000 --extra-config=kubelet.authorization-mode=AlwaysAllow
+minikube start --bootstrapper=kubeadm --extra-config=apiserver.service-node-port-range=1-30000
 eval $(minikube docker-env)
 
 minikube addons enable ingress
 minikube addons enable dashboard
 minikube addons enable metrics-server
 
-MINIKUBE_IP=$(minikube ip)
-export MINIKUBE_IP
-
 # ****************************** build & apply ******************************* #
 
 echo "${green}Building...${cend}"
+
+cp srcs/originals/index.html srcs/nginx/index.html
+sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/nginx/index.html
+
 docker build -t nginx srcs/nginx/
 
 cp srcs/originals/wordpressdb.sql srcs/mysql/wordpressdb.sql
-sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/mysql/wordpressdb.sql
+sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/mysql/wordpressdb.sql
 
 docker build -t mysql srcs/mysql/
 docker build -t wordpress srcs/wordpress/
 
 cp srcs/originals/setssl.sh srcs/ftps/setssl.sh
-sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/ftps/setssl.sh
+sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/ftps/setssl.sh
 
 docker build -t ftps srcs/ftps/
 
 cp srcs/originals/telegraf.yaml srcs/telegraf.yaml
-sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/telegraf.yaml
+sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/telegraf.yaml
+
+docker build -t telegraf srcs/telegraf/
+docker build -t influxdb srcs/influxdb/
+docker build -t phpmyadmin srcs/phpmyadmin/
 
 kubectl apply -f ./srcs/
 
 # ******************************* import .sql ******************************** #
 
 echo "${green}Importing SQL db...${cend}"
-while [ $(kubectl get pods -l app=mysql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]; do
+while [[ $(kubectl get pods -l app=mysql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do
 	sleep 5;
 done
 
@@ -111,28 +121,19 @@ kubectl exec -i $(kubectl get pods | grep mysql | cut -d" " -f1) -- mysql wordpr
 
 # ***************************** import influxdb ****************************** #
 
+mkdir -p ./srcs/dashboards
 echo "${green}Importing dashboards...${cend}"
 cp srcs/originals/setdbs.sh srcs/dashboards/setdbs.sh
-sed -i '' "s/MINIKUBE_IP/$MINIKUBE_IP/g" srcs/dashboards/setdbs.sh
+sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/dashboards/setdbs.sh
 
-while [ $(kubectl get pods -l app=grafana -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]; do
+while [[ $(kubectl get pods -l app=grafana -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" ]]; do
 	sleep 5;
 done
 
-sleep 20
+sleep 30
 
 sh srcs/dashboards/setdbs.sh
 
 # test ssh : ssh admin@$(minikube ip) -p 400
 # kill container : kubectl exec -it $(kubectl get pods | grep SERVICE_NAME | cut -d" " -f1) -- /bin/sh -c "kill 1"
-# clean : minikube delete && rm ./srcs/dashboards/* && rm ./srcs/mysql/wordpressdb.sql && rm ./srcs/telegraf.yaml && rm ./srcs/ftps/setssl.sh
-
-
-
-
-
-
-
-
-
-
+# clean : minikube delete && rm ./srcs/dashboards/* && rm ./srcs/mysql/wordpressdb.sql && rm ./srcs/telegraf.yaml && rm ./srcs/ftps/setssl.sh && rm ./srcs/nginx/index.html

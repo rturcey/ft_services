@@ -60,9 +60,9 @@ spec:
         - containerPort: 21000
           hostPort: 21000
         volumeMounts:
-        - name: ftps-persistent-storage
+        - name: ftps-ps
           mountPath: /var/lib/ftps
       volumes:
-      - name: ftps-persistent-storage
+      - name: ftps-ps
         persistentVolumeClaim:
           claimName: ftps-pvcl
