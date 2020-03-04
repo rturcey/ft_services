@@ -105,6 +105,7 @@ sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/telegraf.yaml
 docker build -t telegraf srcs/telegraf/
 docker build -t influxdb srcs/influxdb/
 docker build -t phpmyadmin srcs/phpmyadmin/
+docker build -t grafana srcs/grafana
 
 kubectl apply -f ./srcs/
 
