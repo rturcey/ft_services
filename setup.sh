@@ -6,7 +6,7 @@
 #    By: rturcey <marvin@42.fr>                     +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/02/16 11:29:15 by rturcey           #+#    #+#              #
-#    Updated: 2020/02/16 11:29:18 by rturcey          ###   ########.fr        #
+#    Updated: 2020/03/05 15:42:20 by rturcey          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,7 +16,19 @@ green=$'\033[1;92m'
 red=$'\033[1;91m'
 cend=$'\033[0m'
 
-echo "${red}[!] PLEASE NOTICE THAT DOCKER SHOULD BE RUNNING NOW [!]${cend}"
+echo "${green}
+
+
+███████╗████████╗     ███████╗███████╗██████╗ ██╗   ██╗██╗ ██████╗███████╗███████╗
+██╔════╝╚══██╔══╝     ██╔════╝██╔════╝██╔══██╗██║   ██║██║██╔════╝██╔════╝██╔════╝
+█████╗     ██║        ███████╗█████╗  ██████╔╝██║   ██║██║██║     █████╗  ███████╗
+██╔══╝     ██║        ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██║██║     ██╔══╝  ╚════██║
+██║        ██║███████╗███████║███████╗██║  ██║ ╚████╔╝ ██║╚██████╗███████╗███████║
+╚═╝        ╚═╝╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚═╝ ╚═════╝╚══════╝╚══════╝
+
+${cend}"
+
+echo "${red}[!] PLEASE NOTICE THAT DOCKER SHOULD BE RUNNING NOW [!]${cend}\n"
 
 # ****************************** checking $USER ****************************** #
 
@@ -81,32 +93,40 @@ minikube addons enable metrics-server
 
 # ****************************** build & apply ******************************* #
 
-echo "${green}Building...${cend}"
-
+echo "${green}Building nginx...${cend}"
 cp srcs/originals/index.html srcs/nginx/index.html
 sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/nginx/index.html
-
 docker build -t nginx srcs/nginx/
 
+echo "${green}Building MySQL...${cend}"
 cp srcs/originals/wordpressdb.sql srcs/mysql/wordpressdb.sql
 sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/mysql/wordpressdb.sql
-
 docker build -t mysql srcs/mysql/
+
+echo "${green}Building wordpress...${cend}"
 docker build -t wordpress srcs/wordpress/
 
+echo "${green}Building FTPS...${cend}"
 cp srcs/originals/setssl.sh srcs/ftps/setssl.sh
 sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/ftps/setssl.sh
-
 docker build -t ftps srcs/ftps/
 
+echo "${green}Building telegraf...${cend}"
 cp srcs/originals/telegraf.yaml srcs/telegraf.yaml
 sed -i '' "s/MINIKUBE_IP/$(minikube ip)/g" srcs/telegraf.yaml
-
 docker build -t telegraf srcs/telegraf/
+
+echo "${green}Building influxDB...${cend}"
 docker build -t influxdb srcs/influxdb/
+
+echo "${green}Building PHPMyAdmin...${cend}"
 docker build -t phpmyadmin srcs/phpmyadmin/
+
+echo "${green}Building grafana...${cend}"
 docker build -t grafana srcs/grafana
 
+
+echo "${green}Deploying...${cend}"
 kubectl apply -f ./srcs/
 
 # ******************************* import .sql ******************************** #
@@ -135,6 +155,15 @@ sleep 30
 
 sh srcs/dashboards/setdbs.sh
 
+echo "\n${green}
+██████╗  ██████╗ ███╗   ██╗███████╗    ██╗
+██╔══██╗██╔═══██╗████╗  ██║██╔════╝    ██║
+██║  ██║██║   ██║██╔██╗ ██║█████╗      ██║
+██║  ██║██║   ██║██║╚██╗██║██╔══╝      ╚═╝
+██████╔╝╚██████╔╝██║ ╚████║███████╗    ██╗
+╚═════╝  ╚═════╝ ╚═╝  ╚═══╝╚══════╝    ╚═╝
+                                          ${cend}"
+
 # test ssh : ssh admin@$(minikube ip) -p 400
-# kill container : kubectl exec -it $(kubectl get pods | grep SERVICE_NAME | cut -d" " -f1) -- /bin/sh -c "kill 1"
-# clean : minikube delete && rm ./srcs/dashboards/* && rm ./srcs/mysql/wordpressdb.sql && rm ./srcs/telegraf.yaml && rm ./srcs/ftps/setssl.sh && rm ./srcs/nginx/index.html
+# kill container : kubectl exec -it $(kubectl get pods | grep POD_NAME | cut -d" " -f1) -c CONTAINER_NAME -- /bin/sh -c "kill 1"
+# clean : minikube delete && rm -rf ./srcs/dashboards && rm ./srcs/mysql/wordpressdb.sql && rm ./srcs/telegraf.yaml && rm ./srcs/ftps/setssl.sh && rm ./srcs/nginx/index.html
